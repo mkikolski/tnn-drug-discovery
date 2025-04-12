@@ -18,12 +18,30 @@ class TransformerGenerator(nn.Module):
 
         self.fc_out = nn.Linear(d_model, vocab_size)
 
+    @property
+    def vocab_size(self):
+        return self.embedding.num_embeddings
+
     def forward(self, src: torch.Tensor, src_mask: torch.Tensor = None, src_key_padding_mask: torch.Tensor = None) -> torch.Tensor:
         src = self.embedding(src) * math.sqrt(self.d_model)
         src = self.pos_encoder(src)
 
         output = self.transformer(src, src_mask, src_key_padding_mask)
         return self.fc_out(output)
+
+    def get_state_vector(self, token_sequence: torch.Tensor) -> torch.Tensor:
+        self.eval()
+        with torch.no_grad():
+            src = self.embedding(token_sequence) * math.sqrt(self.d_model)
+            src = self.pos_encoder(src)
+            encoded = self.transformer(src)
+            return encoded[-1]  # change to mean pooling instead last embedding?
+
+    def step(self, current_sequence: torch.Tensor, action_token: int) -> tuple[torch.Tensor, torch.Tensor]:
+        next_token = torch.tensor([[action_token]], device=current_sequence.device)
+        new_sequence = torch.cat([current_sequence, next_token], dim=0)
+        state_vector = self.get_state_vector(new_sequence)
+        return new_sequence, state_vector
 
     def generate(self, max_len: int = 100, temperature: float = 1.0, device: str = 'cpu') -> list[int]:
         self.eval()

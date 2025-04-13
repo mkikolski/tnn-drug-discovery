@@ -4,23 +4,22 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn import TransformerEncoder, TransformerEncoderLayer
 from positional_encoder import PositionalEncoding
+from smiles_preprocessor import SMILESPreprocessor
 
 
 class TransformerGenerator(nn.Module):
-    def __init__(self, vocab_size: int, d_model: int = 256, nhead: int = 8, num_layers: int = 6, dim_feedforward: int = 1024, dropout: float = 0.1):
+    def __init__(self, smiles_encoder: SMILESPreprocessor, d_model: int = 256, nhead: int = 8, num_layers: int = 6, dim_feedforward: int = 1024, dropout: float = 0.1):
         super().__init__()
         self.d_model = d_model
-        self.embedding = nn.Embedding(vocab_size, d_model)
+        self.smiles_encoder = smiles_encoder
+        self.embedding = nn.Embedding(self.smiles_encoder.vocab_size, d_model)
         self.pos_encoder = PositionalEncoding(d_model, dropout)
+        self.vocab_size = self.smiles_encoder.vocab_size
 
         encoder_layers = TransformerEncoderLayer(d_model, nhead, dim_feedforward, dropout)
         self.transformer = TransformerEncoder(encoder_layers, num_layers)
 
-        self.fc_out = nn.Linear(d_model, vocab_size)
-
-    @property
-    def vocab_size(self):
-        return self.embedding.num_embeddings
+        self.fc_out = nn.Linear(d_model, self.smiles_encoder.vocab_size)
 
     def forward(self, src: torch.Tensor, src_mask: torch.Tensor = None, src_key_padding_mask: torch.Tensor = None) -> torch.Tensor:
         src = self.embedding(src) * math.sqrt(self.d_model)
@@ -42,6 +41,9 @@ class TransformerGenerator(nn.Module):
         new_sequence = torch.cat([current_sequence, next_token], dim=0)
         state_vector = self.get_state_vector(new_sequence)
         return new_sequence, state_vector
+
+    def is_terminal(self, token_sequence: torch.Tensor) -> bool:
+        return token_sequence[-1].item() == self.vocab.smiles_to_index['<eos>']
 
     def generate(self, max_len: int = 100, temperature: float = 1.0, device: str = 'cpu') -> list[int]:
         self.eval()

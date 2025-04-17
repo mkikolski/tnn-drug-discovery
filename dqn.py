@@ -6,6 +6,7 @@ import torch.nn as nn
 import random
 import torch.optim as optim
 
+from scoring import Scoring
 from tnn_generator import TransformerGenerator
 
 
@@ -21,7 +22,7 @@ class DQN(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-    def reinforced_training(self, generator: TransformerGenerator, target_pdb, epochs: int = 1000, gamma: float = 0.99):
+    def reinforced_training(self, generator: TransformerGenerator, score_calc: Scoring, target_pdb: str, epochs: int = 1000, gamma: float = 0.99):
         optimizer = optim.Adam(self.parameters(), lr=1e-3)
         buffer = ReplayBuffer(10000)
 
@@ -35,7 +36,8 @@ class DQN(nn.Module):
                 action = torch.argmax(q_values).item()
 
                 next_smiles, next_state = generator.step(state, action)
-                reward = evaluate_molecule(next_smiles, target_pdb)
+                score_calc.set_args({'smiles': next_smiles, 'target': target_pdb})
+                reward = score_calc.compute()
                 done = generator.is_terminal(next_smiles)
 
                 buffer.push((state, action, reward, next_state, done))

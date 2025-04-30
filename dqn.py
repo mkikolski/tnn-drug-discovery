@@ -1,6 +1,3 @@
-import numpy as np
-from rdkit import Chem
-from rdkit.Chem import Descriptors
 import torch
 import torch.nn as nn
 import random
@@ -21,6 +18,12 @@ class DQN(nn.Module):
 
     def forward(self, x):
         return self.net(x)
+
+    def save(self, path):
+        torch.save(self.state_dict(), path)
+
+    def load(self, path):
+        self.load_state_dict(torch.load(path))
 
     def reinforced_training(self, generator: TransformerGenerator, score_calc: Scoring, target_pdb: str, epochs: int = 1000, gamma: float = 0.99):
         optimizer = optim.Adam(self.parameters(), lr=1e-3)

@@ -68,3 +68,9 @@ class TransformerGenerator(nn.Module):
 
     def _generate_square_subsequent_mask(self, sz: int) -> torch.Tensor:
         return torch.triu(torch.full((sz, sz), float('-inf')), diagonal=1)
+
+    def save(self, path):
+        torch.save(self.state_dict(), path)
+
+    def load(self, path):
+        self.load_state_dict(torch.load(path))

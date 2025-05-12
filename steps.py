@@ -41,8 +41,8 @@ class Steps:
         for epoch in range(1000):
             tl = 0
             for batch in dl:
-                input_seq = batch[:, :-1].to("cpu")
-                target_seq = batch[:, 1:].to("cpu")
+                input_seq = batch[:, :-1].to("gpu")
+                target_seq = batch[:, 1:].to("gpu")
 
                 optimizer.zero_grad()
                 output = generator(input_seq)
@@ -53,7 +53,7 @@ class Steps:
                 tl += loss.item()
             print(f"[Pretrain] Epoch {epoch+1}: Loss = {tl / len(dl):.4f}")
         generator.save("pretrained_generator.pt")
-        Steps.save_backup_files("pretrained_generator.pt")
+        # Steps.save_backup_files("pretrained_generator.pt")
         return {"pretrained_generator": generator}
 
     @staticmethod

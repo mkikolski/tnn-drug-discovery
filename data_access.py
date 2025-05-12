@@ -44,6 +44,3 @@ class DataAccess:
                 raise Exception(f"Failed to fetch data: {r.status_code}")
         with open("checkpoints/chembl_checkpoint", "w") as f:
             f.write(str(offset))
-
-
-DataAccess.get_general_training_chembl_data("data/general", limit=10, smi_length=100, tc=2496335)

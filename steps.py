@@ -6,6 +6,7 @@ import os
 from dotenv import load_dotenv
 from torch import nn
 from torch import optim
+from torch.nn.utils.rnn import pad_sequence
 
 from save_backup import SFTPUploader
 from smiles_preprocessor import SMILESPreprocessor
@@ -34,8 +35,9 @@ class Steps:
         optimizer = optim.Adam(generator.parameters(), lr=1e-3)
         criterion = nn.CrossEntropyLoss()
 
-        tokens = TensorDataset(torch.Tensor([preprocessor.encode(smiles) for smiles in smiles_list]))
-        dl = DataLoader(tokens)
+        encoded = pad_sequence([torch.Tensor(preprocessor.encode(smiles)) for smiles in smiles_list], batch_first=True, padding_value=preprocessor.smiles_to_index["<pad>"])
+        tokens = TensorDataset(encoded)
+        dl = DataLoader(tokens, batch_size=32, shuffle=True)
 
         generator.train()
         for epoch in range(1000):

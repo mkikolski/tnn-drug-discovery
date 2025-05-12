@@ -43,8 +43,8 @@ class Steps:
         for epoch in range(1000):
             tl = 0
             for batch in dl:
-                input_seq = batch[:, :-1].to("gpu")
-                target_seq = batch[:, 1:].to("gpu")
+                input_seq = batch[0][:, :-1].to("gpu")
+                target_seq = batch[0][:, 1:].to("gpu")
 
                 optimizer.zero_grad()
                 output = generator(input_seq)

@@ -23,7 +23,7 @@ class Steps:
         smiles_list = []
 
         for file in os.listdir("data/general"):
-            with open(file, "r") as f:
+            with open(f"data/general/{file}", "r") as f:
                 for l in f.readlines():
                     if len(l) > 3:
                         smiles_list.append(l.rstrip())

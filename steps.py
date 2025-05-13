@@ -24,7 +24,7 @@ class Steps:
         smiles_list = []
 
         for file in os.listdir("data/general" if "save_path" not in kwargs else kwargs["save_path"]):
-            with open(f"{"data/general" if "save_path" not in kwargs else kwargs["save_path"]}/{file}", "r") as f:
+            with open(f"{'data/general' if 'save_path' not in kwargs else kwargs['save_path']}/{file}", "r") as f:
                 for l in f.readlines():
                     if len(l) > 3:
                         smiles_list.append(l.rstrip())

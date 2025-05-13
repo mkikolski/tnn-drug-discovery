@@ -16,15 +16,15 @@ from tnn_generator import TransformerGenerator
 class Steps:
     @staticmethod
     def fetch_data(**kwargs) -> dict:
-        DataAccess.get_general_training_chembl_data("data/general", limit=1000, smi_length=100, tc=2496335)
-        return {}
+        DataAccess.get_general_training_chembl_data("data/general" if "save_path" not in kwargs else kwargs["save_path"], limit=1000, smi_length=100, tc=2496335)
+        return {} if "save_path" not in kwargs else kwargs
 
     @staticmethod
     def pretrain_generator(**kwargs) -> dict:
         smiles_list = []
 
-        for file in os.listdir("data/general"):
-            with open(f"data/general/{file}", "r") as f:
+        for file in os.listdir("data/general" if "save_path" not in kwargs else kwargs["save_path"]):
+            with open(f"{"data/general" if "save_path" not in kwargs else kwargs["save_path"]}/{file}", "r") as f:
                 for l in f.readlines():
                     if len(l) > 3:
                         smiles_list.append(l.rstrip())

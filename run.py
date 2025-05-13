@@ -8,10 +8,12 @@ group = parser.add_mutually_exclusive_group()
 group.add_argument("-s", "--step", type=str, default=None, help="Specify a step to run. Options: fetch, pretrain, dqn.")
 group.add_argument("-f", "--full", action="store_true", help="Run the full pipeline.")
 
+parser.add_argument("-sp", "--smiles-path", type=str, default=None, help="Pass path to save location of SMILES for pretraining process. Defaults to data/general.")
+
 args = parser.parse_args()
 
 if __name__ == "__main__":
-    p = Pipeline()
+    p = Pipeline() if args.sp is None else Pipeline(**{"save_path": args.sp})
     if args.step == "fetch":
         print("Entered fetch step")
         p.add_step({"name": "Fetching pretraining data", "function": Steps.fetch_data})

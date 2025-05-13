@@ -13,7 +13,7 @@ parser.add_argument("-sp", "--smiles-path", type=str, default=None, help="Pass p
 args = parser.parse_args()
 
 if __name__ == "__main__":
-    p = Pipeline() if args.sp is None else Pipeline(**{"save_path": args.sp})
+    p = Pipeline() if args.smiles_path is None else Pipeline(**{"save_path": args.smiles_path})
     if args.step == "fetch":
         print("Entered fetch step")
         p.add_step({"name": "Fetching pretraining data", "function": Steps.fetch_data})

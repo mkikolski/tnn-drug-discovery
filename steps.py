@@ -16,7 +16,7 @@ from tnn_generator import TransformerGenerator
 class Steps:
     @staticmethod
     def fetch_data(**kwargs) -> dict:
-        DataAccess.get_general_training_chembl_data("data/general" if "save_path" not in kwargs else kwargs["save_path"], limit=1000, smi_length=100, tc=2496335)
+        DataAccess.get_general_training_chembl_data("data/general" if "save_path" not in kwargs else kwargs["save_path"], checkpoint_path=None if "checkpoint_path" not in kwargs else kwargs["checkpoint_path"], limit=1000, smi_length=100, tc=2496335)
         return {} if "save_path" not in kwargs else kwargs
 
     @staticmethod
@@ -38,9 +38,17 @@ class Steps:
         encoded = pad_sequence([torch.Tensor(preprocessor.encode(smiles)) for smiles in smiles_list], batch_first=True, padding_value=preprocessor.smiles_to_index["<pad>"])
         tokens = TensorDataset(encoded)
         dl = DataLoader(tokens, batch_size=32, shuffle=True)
+        eps = 0
+        backup_step = 100
+
+        if "model_dict" in kwargs:
+            checkpoint = torch.load(kwargs["model_dict"])
+            generator.load_state_dict(checkpoint["model"])
+            optimizer.load_state_dict(checkpoint["optimizer"])
+            eps = checkpoint["eps"]
 
         generator.train()
-        for epoch in range(1000):
+        for epoch in range(eps, 20000):
             tl = 0
             for batch in dl:
                 input_seq = batch[0][:, :-1].to("cuda")
@@ -54,7 +62,13 @@ class Steps:
 
                 tl += loss.item()
             print(f"[Pretrain] Epoch {epoch+1}: Loss = {tl / len(dl):.4f}")
-        generator.save("pretrained_generator.pt")
+            if (epoch + 1) % backup_step == 0:
+                torch.save({
+                    "model": generator.state_dict(),
+                    "optimizer": optimizer.state_dict(),
+                    "eps": epoch + 1
+                }, kwargs["checkpoint_path"] if "checkpoint_path" in kwargs else "checkpoint.pt")
+        generator.save("pretrained_generator.pt" if "model_save" not in kwargs else kwargs["model_save"])
         # Steps.save_backup_files("pretrained_generator.pt")
         return {"pretrained_generator": generator}
 

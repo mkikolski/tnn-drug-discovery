@@ -11,7 +11,7 @@ class Pipeline:
         return self
 
     def run(self):
-        next_args = {} if len(self.initial_args) == 0 else self.initial_args
+        next_args = self.initial_args
         for step in self.steps:
             print(f"[{datetime.now().isoformat()}] Running step: {step['name']}")
             next_args = step['function'](**next_args)

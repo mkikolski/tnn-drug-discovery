@@ -1,0 +1,58 @@
+# Example configuration for molecule generation and RL training
+
+[general]
+# Path to the dataset directory (should contain SMILES files)
+data_path = "/dataset/general"
+# Maximum length of SMILES sequences
+data_max_len = 100
+# Device to use for training ("cuda" or "cpu")
+device = "cuda"
+
+[training]
+# Learning rate for optimizer
+learning_rate = 1e-3
+# Number of pretraining epochs for the generator
+pretraining_epochs = 20000
+# Batch size for dataloaders
+batch_size = 128
+# Directory to save checkpoints
+checkpoint_dir = "checkpoints"
+# Save checkpoint every N epochs
+save_frequency = 1
+# Path to checkpoint to resume training from (set to empty string if not resuming)
+resume_from = ""
+
+[model]
+# Hidden size for TNN and DQN
+hidden_size = 256
+# Number of transformer layers in TNN
+n_layers = 6
+# Number of attention heads in TNN
+nheads = 8
+
+[rl]
+# Replay buffer capacity
+buffer_capacity = 10000
+# Batch size for DQN updates
+rl_batch_size = 64
+# Discount factor for RL
+gamma = 0.99
+# Learning rate for DQN
+rl_learning_rate = 1e-3
+# Path to CSV file for prepopulating replay buffer (SMILES, qed, sa, docking)
+replay_csv = "replay_data.csv"
+# Epsilon for epsilon-greedy policy
+epsilon = 0.1
+
+[reward]
+# Reward function weights (used in custom_reward)
+qed_weight = 0.4
+sa_weight = -0.01
+
+[generate]
+# Number of molecules to generate
+num_molecules = 10
+# Sampling temperature
+temperature = 0.7
+
+

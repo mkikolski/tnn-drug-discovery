@@ -12,7 +12,7 @@ device = "cuda"
 # Learning rate for optimizer
 learning_rate = 1e-3
 # Number of pretraining epochs for the generator
-pretraining_epochs = 20000
+pretraining_epochs = 5
 # Batch size for dataloaders
 batch_size = 128
 # Directory to save checkpoints

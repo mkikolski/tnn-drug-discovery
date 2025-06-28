@@ -3,7 +3,6 @@ from torch.utils.data import Dataset
 import os
 from typing import Optional, Tuple
 from tokenizer import SMILESTokenizer
-from globals import Global
 
 
 class SMILESDataset(Dataset):
@@ -18,9 +17,7 @@ class SMILESDataset(Dataset):
         self.__process_sequences()
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        # Return input and target tensors for training
         tensor = self.tensors[idx]
-        # Input is all tokens except last, target is all tokens except first
         return tensor[:-1], tensor[1:]
 
     def __len__(self) -> int:

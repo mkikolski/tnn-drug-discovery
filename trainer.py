@@ -13,7 +13,6 @@ from tnn import TNN
 from tokenizer import SMILESTokenizer
 from dataset import SMILESDataset
 
-# DQN and Replay Buffer
 Transition = namedtuple('Transition', ('state', 'action', 'reward', 'next_state', 'done'))
 
 class ReplayBuffer:
@@ -43,12 +42,9 @@ class DQN(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-# Custom reward function (example, replace with your logic)
-def custom_reward(smiles, value):
-    # Example: reward is just the value, but you can use any function
-    return value
+def custom_reward(smiles, qed, sa, docking):
+    return -0.01 * sa + 0.4 * qed + (abs(docking) - 3.3) / (2 * (9.8 - 3.3))
 
-# Monte Carlo return computation
 def compute_mc_returns(rewards, gamma=0.99):
     returns = []
     R = 0
@@ -57,18 +53,15 @@ def compute_mc_returns(rewards, gamma=0.99):
         returns.insert(0, R)
     return returns
 
-# Prepopulate replay buffer from CSV
 def populate_replay_buffer_from_csv(buffer, csv_path, tokenizer, max_length):
     with open(csv_path, 'r') as f:
         reader = csv.reader(f)
         for row in reader:
-            smiles, value = row[0], float(row[1])
+            smiles, qed, sa, docking = row[0], float(row[1]), float(row[2]), float(row[3])
             state = tokenizer.encode(smiles, max_length).float()
-            reward = custom_reward(smiles, value)
-            # For offline data, next_state and done are not available, so set to None/False
+            reward = custom_reward(smiles, qed, sa, docking)
             buffer.push(state, 0, reward, None, False)
 
-# RL Agent
 class RLAgent:
     def __init__(self, state_dim, action_dim, buffer_capacity=10000, batch_size=64, gamma=0.99, lr=1e-3):
         self.dqn = DQN(state_dim, action_dim)
@@ -142,10 +135,8 @@ class SMILESTrainer:
             }
         }
         
-        # Save regular checkpoint
         torch.save(checkpoint, save_path)
         
-        # If this is the best model so far, save a separate best checkpoint
         if is_best:
             best_path = os.path.join(os.path.dirname(save_path), 'best_model.pt')
             torch.save(checkpoint, best_path)
@@ -159,14 +150,12 @@ class SMILESTrainer:
         self.current_epoch = checkpoint['epoch']
         self.best_loss = checkpoint['best_loss']
         
-        # Restore tokenizer state if needed
         tokenizer_state = checkpoint['tokenizer_state']
         self.tokenizer.token2idx = tokenizer_state['token2idx']
         self.tokenizer.idx2token = tokenizer_state['idx2token']
         self.tokenizer.vocab_size = tokenizer_state['vocab_size']
 
     def train_epoch(self, dataloader: DataLoader) -> float:
-        """Train for one epoch and return average loss."""
         self.model.train()
         total_loss = 0
         
@@ -177,7 +166,6 @@ class SMILESTrainer:
             self.optimizer.zero_grad()
             outputs = self.model(input_ids)
             
-            # Reshape for cross entropy
             loss = self.criterion(
                 outputs.view(-1, outputs.size(-1)),
                 target_ids.view(-1)
@@ -204,26 +192,20 @@ class SMILESTrainer:
         generated = []
         
         for _ in range(num_samples):
-            # Start with START token
             current_ids = torch.tensor([[self.tokenizer.token2idx[self.tokenizer.START_token]]], device=self.device)
             for _ in range(max_length):
                 outputs = self.model(current_ids)
-                # Ensure outputs shape is (batch, seq_len, vocab)
                 next_token_logits = outputs[:, -1, :] / temperature
                 if top_k is not None:
-                    # Fix shape for top_k selection
                     values, _ = torch.topk(next_token_logits, top_k)
                     min_topk = values[..., -1, None]
                     indices_to_remove = next_token_logits < min_topk
                     next_token_logits[indices_to_remove] = float('-inf')
                 probs = torch.nn.functional.softmax(next_token_logits, dim=-1)
                 next_token = torch.multinomial(probs, num_samples=1)
-                # next_token shape: (batch, 1)
                 if next_token.item() == self.tokenizer.token2idx[self.tokenizer.END_token]:
                     break
-                # Concatenate along sequence dimension
                 current_ids = torch.cat([current_ids, next_token], dim=1)
-            # Remove batch dimension for decoding
             generated_smiles = self.tokenizer.decode(current_ids[0], skip_special_tokens=True)
             generated.append(generated_smiles)
         return generated
@@ -237,10 +219,8 @@ class SMILESTrainer:
         eval_dataloader: Optional[DataLoader] = None,
         resume_from: Optional[str] = None
     ):
-        """Train the model for multiple epochs with checkpointing."""
         os.makedirs(save_dir, exist_ok=True)
         
-        # Resume training if checkpoint provided
         if resume_from and os.path.exists(resume_from):
             print(f"Resuming training from checkpoint: {resume_from}")
             self.load_checkpoint(resume_from)
@@ -252,7 +232,6 @@ class SMILESTrainer:
             train_loss = self.train_epoch(train_dataloader)
             print(f"Epoch {epoch + 1}/{num_epochs}, Train Loss: {train_loss:.4f}")
             
-            # Evaluation step
             if eval_dataloader is not None:
                 eval_loss = self.evaluate(eval_dataloader)
                 print(f"Eval Loss: {eval_loss:.4f}")
@@ -264,20 +243,14 @@ class SMILESTrainer:
                 if is_best:
                     self.best_loss = train_loss
             
-            # Regular checkpoint saving
             if (epoch + 1) % save_frequency == 0:
                 checkpoint_path = os.path.join(save_dir, f"checkpoint_epoch_{epoch+1}.pt")
                 self.save_checkpoint(checkpoint_path, is_best=is_best)
                 print(f"Saved checkpoint at epoch {epoch+1}")
             
-            # Generate a sample every few epochs
-            if (epoch + 1) % 5 == 0:
-                sample = self.generate(num_samples=1)[0]
-                print(f"Sample SMILES: {sample}")
 
     @torch.no_grad()
     def evaluate(self, dataloader: DataLoader) -> float:
-        """Evaluate the model on a dataset."""
         self.model.eval()
         total_loss = 0
         

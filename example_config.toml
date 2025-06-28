@@ -44,15 +44,31 @@ replay_csv = "replay_data.csv"
 # Epsilon for epsilon-greedy policy
 epsilon = 0.1
 
-[reward]
-# Reward function weights (used in custom_reward)
-qed_weight = 0.4
-sa_weight = -0.01
-
 [generate]
 # Number of molecules to generate
-num_molecules = 10
+num_molecules = 100
 # Sampling temperature
 temperature = 0.7
 
+[reward]
+# QVina2 GPU executable
+qvina2_gpu_path = "qv2gpu"
+# OpenBabel executable
+openbabel_path = "obabel"
+# Path to the receptor PDB file
+receptor_path = "receptor.pdb"
+# Path to the output directory
+output_dir = "output"
+# Pocket coordinates
+x = 11.443
+y = -61.362
+z = -6.894
+# Pocket size
+x_size = 30.0
+y_size = 30.0
+z_size = 30.0
+# Number of threads - 8000 translates to classical vina exhaustiveness of about 128
+threads = 8000
+# Number of pretraining molecules to use for reward calculation
+pretraining_molecules = 30000
 

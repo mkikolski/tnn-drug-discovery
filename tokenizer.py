@@ -6,24 +6,18 @@ from torch import Tensor
 
 class SMILESTokenizer:
     def __init__(self):
-        # Special tokens
         self.PAD_token = "<PAD>"
         self.START_token = "<START>"
         self.END_token = "<END>"
         self.UNK_token = "<UNK>"
         
-        # Basic SMILES tokens
         self.base_tokens = [
-            # Atoms
             'C', 'N', 'O', 'S', 'F', 'Si', 'Cl', 'Br', 'I', 'H', 'P', 'B',
-            # Structural tokens
             '(', ')', '[', ']', '=', '#', '@', '*', '%', '0', '1', '2', '3', '4', '5',
             '6', '7', '8', '9', '.', '+', '-', '/', '\\',
-            # Special tokens
             self.PAD_token, self.START_token, self.END_token, self.UNK_token
         ]
         
-        # Create token to index mapping
         self.token2idx = {token: idx for idx, token in enumerate(self.base_tokens)}
         self.idx2token = {idx: token for token, idx in self.token2idx.items()}
         self.vocab_size = len(self.base_tokens)

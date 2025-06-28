@@ -128,7 +128,7 @@ def main():
                 qeds.append(qed)
                 sas.append(sa)
                 dockings.append(docking)
-            # Compute Monte Carlo returns for the episode
+
             mc_returns = compute_mc_returns(rewards, gamma=rl_cfg.get('gamma', 0.99))
             for state, mc_return in zip(states, mc_returns):
                 agent.buffer.push(state, 0, mc_return, None, False)
